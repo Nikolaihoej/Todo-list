@@ -15,7 +15,7 @@
           </div>
           <div class="todolist-container">
               <ul class="todolist">
-                <TodoItem v-for="todo in todos" :key="todo._id" :todo="todo" @remove="removeTodo"/>
+                <TodoItem v-for="todo in todos" :key="todo._id" :todo="todo" @remove="removeTodo" @edit="updateTodo"/>
               </ul>
           </div>
         </div>
@@ -26,13 +26,17 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { fetchTodos, addTodo as apiAddTodo, removeTodo as apiRemoveTodo } from '../services/todoService.js'
+import { fetchTodos, addTodo as apiAddTodo, removeTodo as apiRemoveTodo, updateTodo as apiUpdateTodo } from '../services/todoService.js'
 import TodoItem from './TodoItem.vue'
 
 const todos = ref([])
 const newTodo = ref('')
 const maxLength = 100
 const isMax = computed(() => newTodo.value.length >= maxLength)
+
+// Edit state
+const editingId = ref(null)
+const editingText = ref('')
 
 // Font switching logic
 const headerFont = ref('inherit')
@@ -68,6 +72,12 @@ async function addTodo() {
   newTodo.value = ''
 }
 
+async function updateTodo(updatedTodo) {
+  const todo = await apiUpdateTodo(updatedTodo._id, { text: updatedTodo.text })
+  const idx = todos.value.findIndex(t => t._id === updatedTodo._id)
+  if (idx !== -1) todos.value[idx] = todo
+}
+
 async function removeTodo(id) {
   const res = await apiRemoveTodo(id)
   if (res.ok) {
@@ -83,12 +93,12 @@ async function removeTodo(id) {
     alert('Failed to delete: ' + errMsg)
   }
 }
+
 </script>
 
 <style scoped>
 .container {
   width: 100%;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
